@@ -478,13 +478,25 @@
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
 
-      playHooray();
       vibrate([15, 30, 25]);
 
-      const cheers = ['HOORAY!', 'YES!', 'GOT IT!', 'NICE!', 'WOOHOO!', 'BOOM!', '+1!', 'SWEET!'];
+      const cheers = [
+        { text: 'WOOHOO!',  speak: 'Woohoo!' },
+        { text: 'HOORAY!',  speak: 'Hooray!' },
+        { text: 'GOT IT!',  speak: 'Got it!' },
+        { text: 'YES!',     speak: 'Yes!' },
+        { text: 'NICE!',    speak: 'Nice!' },
+        { text: 'SWEET!',   speak: 'Sweet!' },
+        { text: 'BOOM!',    speak: 'Boom!' },
+        { text: 'AWESOME!', speak: 'Awesome!' }
+      ];
+      const cheer = cheers[Math.floor(Math.random() * cheers.length)];
+      speakCheer(cheer.speak);
+      playHooray();
+
       const text = document.createElement('div');
       text.className = 'pop-text';
-      text.textContent = cheers[Math.floor(Math.random() * cheers.length)];
+      text.textContent = cheer.text;
       text.style.left = cx + 'px';
       text.style.top = cy + 'px';
       document.body.appendChild(text);
@@ -509,6 +521,30 @@
         document.body.appendChild(c);
         setTimeout(() => c.remove(), 1300);
       }
+    }
+
+    function speakCheer(phrase) {
+      try {
+        if (!('speechSynthesis' in window)) return;
+        // Cancel any pending speech so rapid taps don't queue up
+        speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(phrase);
+        utter.rate = 1.15;
+        utter.pitch = 1.4;
+        utter.volume = 1;
+        // Prefer an English voice if one is loaded
+        const voices = speechSynthesis.getVoices();
+        const preferred = voices.find(v => /en[-_]US/i.test(v.lang) && /samantha|karen|google|female/i.test(v.name))
+                       || voices.find(v => /^en/i.test(v.lang));
+        if (preferred) utter.voice = preferred;
+        speechSynthesis.speak(utter);
+      } catch (e) {}
+    }
+
+    // Some browsers load voices asynchronously
+    if ('speechSynthesis' in window) {
+      speechSynthesis.getVoices();
+      speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
     }
 
     let audioCtx;
